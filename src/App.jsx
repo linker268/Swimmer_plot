@@ -20,6 +20,7 @@ const App = () => {
     SD: '#7FBADC',
     PD: '#8B8B8B',
     ASCT: '#9B59B6',
+    Death: '#E53935',
     bar: '#87CEEB',
   };
 
@@ -83,11 +84,19 @@ const App = () => {
         }
       }
 
+      let deathMonth = null;
+      if (row.Death_date) {
+        const deathDate = parseDate(row.Death_date);
+        if (deathDate) {
+          deathMonth = (deathDate - c1d1) / (1000 * 60 * 60 * 24 * 30.44);
+        }
+      }
+
       const lastResponseDate = responses.length > 0 
         ? Math.max(...responses.map(r => r.month))
         : 0;
       
-      const duration = Math.max(lastResponseDate, asctMonth || 0, 1);
+      const duration = Math.max(lastResponseDate, asctMonth || 0, deathMonth || 0, 1);
 
       return {
         id: row.Patient_ID || `Patient ${index + 1}`,
@@ -95,6 +104,7 @@ const App = () => {
         duration,
         responses,
         asctMonth,
+        deathMonth,
       };
     }).filter(Boolean);
   };
@@ -431,7 +441,8 @@ const App = () => {
               • <code style={{ color: '#64ffda' }}>Patient_ID</code> - 환자 ID<br/>
               • <code style={{ color: '#64ffda' }}>C1D1</code> - 치료 시작일<br/>
               • <code style={{ color: '#64ffda' }}>Resp_date1, Response1, ...</code> - 반응 평가 날짜와 결과<br/>
-              • <code style={{ color: '#64ffda' }}>ASCT_date</code> - ASCT 날짜 (선택)
+              • <code style={{ color: '#64ffda' }}>ASCT_date</code> - ASCT 날짜 (선택)<br/>
+              • <code style={{ color: '#64ffda' }}>Death_date</code> - 사망 날짜 (선택)
             </p>
           </div>
           <input
@@ -527,6 +538,13 @@ const App = () => {
                   <polygon points="8,2 14,8 8,14 2,8" fill={colors.ASCT}/>
                 </svg>
                 <span>ASCT</span>
+              </div>
+              <div className="legend-item">
+                <svg width="16" height="16">
+                  <line x1="3" y1="3" x2="13" y2="13" stroke={colors.Death} strokeWidth="2.5"/>
+                  <line x1="13" y1="3" x2="3" y2="13" stroke={colors.Death} strokeWidth="2.5"/>
+                </svg>
+                <span>Death</span>
               </div>
             </div>
 
@@ -625,6 +643,27 @@ const App = () => {
                             stroke="#fff"
                             strokeWidth="1"
                           />
+                        )}
+                        
+                        {patient.deathMonth && (
+                          <g>
+                            <line
+                              x1={100 + (patient.deathMonth / maxDuration) * 700 - 5}
+                              y1={y + settings.barHeight / 2 - 5}
+                              x2={100 + (patient.deathMonth / maxDuration) * 700 + 5}
+                              y2={y + settings.barHeight / 2 + 5}
+                              stroke={colors.Death}
+                              strokeWidth="2.5"
+                            />
+                            <line
+                              x1={100 + (patient.deathMonth / maxDuration) * 700 + 5}
+                              y1={y + settings.barHeight / 2 - 5}
+                              x2={100 + (patient.deathMonth / maxDuration) * 700 - 5}
+                              y2={y + settings.barHeight / 2 + 5}
+                              stroke={colors.Death}
+                              strokeWidth="2.5"
+                            />
+                          </g>
                         )}
                       </g>
                     );
