@@ -15,12 +15,12 @@ const App = () => {
   });
 
   const colors = {
-    CR: '#2E9B6F',
-    PR: '#7FBADC',
-    SD: '#F5C342',
-    PD: '#8B8B8B',
+    CR: '#123C7A',   // Complete Response - 진한 남색
+    PR: '#2E6FBE',   // Partial Response - 파랑
+    SD: '#63B3E0',   // Stable Disease - 밝은 파랑
+    PD: '#D62728',   // Progressive Disease - 빨강 (경보)
     ASCT: '#9B59B6',
-    Death: '#E53935',
+    Death: '#7A0C0C', // 진한 적갈색 (PD 빨강과 구분)
     bar: '#B8C0CC',
   };
 
@@ -205,7 +205,7 @@ const App = () => {
     };
     Object.keys(RANK).forEach(k => add(
       <g>
-        <circle cx={LEGX} cy={y} r={5.5} fill={colors[k] || '#999'} />
+        <circle cx={LEGX} cy={y} r={5.5} fill={colors[k] || '#999'} stroke="#334155" strokeWidth="1" />
         {k === 'MRD-' && <circle cx={LEGX} cy={y} r={2} fill="#fff" />}
       </g>, k === 'MRD-' ? 'MRD−' : k));
     y += 8;
@@ -638,7 +638,7 @@ const App = () => {
                         )}
 
                         {patient.responses.map((resp, i) => (
-                          <circle key={i} cx={X(resp.month)} cy={cy} r={6} fill={colors[resp.response] || '#999'} stroke="#fff" strokeWidth="1"/>
+                          <circle key={i} cx={X(resp.month)} cy={cy} r={6} fill={colors[resp.response] || '#999'} stroke="#334155" strokeWidth="1"/>
                         ))}
 
                         {patient.asctMonth != null && (
@@ -718,7 +718,7 @@ const App = () => {
                         <g key={`sum-${sg.k}`}>
                           <rect x={SUMX - SBARW / 2} y={sg.y0} width={SBARW} height={Math.max(sg.y1 - sg.y0, 0)} fill={colors[sg.k]} stroke="#fff" strokeWidth="1"/>
                           {sg.v >= 6 && (
-                            <text x={SUMX} y={(sg.y0 + sg.y1) / 2 + 4} textAnchor="middle" fontSize={`${sg.k} ${Math.round(sg.v)}%`.length > 8 ? 9 : 10.5} fill={(sg.k === 'sCR' || sg.k === 'CR') ? '#fff' : '#1a1a1a'}>{sg.k} {Math.round(sg.v)}%</text>
+                            <text x={SUMX} y={(sg.y0 + sg.y1) / 2 + 4} textAnchor="middle" fontSize={`${sg.k} ${Math.round(sg.v)}%`.length > 8 ? 9 : 10.5} fill={(sg.k === 'CR' || sg.k === 'PR') ? '#fff' : '#1a1a1a'}>{sg.k} {Math.round(sg.v)}%</text>
                           )}
                         </g>
                       ))}
