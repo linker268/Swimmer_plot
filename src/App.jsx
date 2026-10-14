@@ -258,7 +258,7 @@ const App = () => {
     add(<polygon points={`${LEGX},${y - 6} ${LEGX + 6},${y} ${LEGX},${y + 6} ${LEGX - 6},${y}`} fill={colors.ASCT} />, 'ASCT');
     add(<g><line x1={LEGX - 5} y1={y - 5} x2={LEGX + 5} y2={y + 5} stroke={colors.Death} strokeWidth={2.5} /><line x1={LEGX + 5} y1={y - 5} x2={LEGX - 5} y2={y + 5} stroke={colors.Death} strokeWidth={2.5} /></g>, 'Death');
     add(<polygon points={`${LEGX - 5},${y - 5} ${LEGX + 6},${y} ${LEGX - 5},${y + 5}`} fill="#374151" />, 'Alive at cutoff');
-    add(<polygon points={`${LEGX - 4},${y - 4} ${LEGX + 4},${y - 4} ${LEGX},${y + 4.5}`} fill={colors.DoseRed} />, 'Dose reduction');
+    add(<polygon points={`${LEGX - 4.5},${y - 3.9} ${LEGX + 4.5},${y - 3.9} ${LEGX},${y + 3.9}`} fill={colors.DoseRed} />, 'Dose reduction');
     add(<g><rect x={LEGX - 10} y={y - 5} width={20} height={10} fill={colors.CR} /><rect x={LEGX - 2} y={y - 6} width={4} height={12} fill="#fff" /><line x1={LEGX} y1={y - 9} x2={LEGX} y2={y + 9} stroke="#374151" strokeWidth={3} /></g>, 'EOT');
     add(<line x1={LEGX - 9} y1={y} x2={LEGX + 9} y2={y} stroke="#9AA0AA" strokeWidth={2} strokeDasharray="2 3" />, 'Survival FU');
     add(<g><line x1={LEGX - 5} y1={y + 6} x2={LEGX + 1} y2={y - 6} stroke="#374151" strokeWidth={2.5} /><line x1={LEGX} y1={y + 6} x2={LEGX + 6} y2={y - 6} stroke="#374151" strokeWidth={2.5} /></g>, 'Drop-out');
@@ -548,7 +548,8 @@ const App = () => {
               • <code style={{ color: '#64ffda' }}>Cohort</code> - 코호트/Arm 구분 (선택)<br/>
               • <code style={{ color: '#64ffda' }}>Patient_ID</code> - 환자 ID<br/>
               • <code style={{ color: '#64ffda' }}>C1D1</code> - 치료 시작일<br/>
-              • <code style={{ color: '#64ffda' }}>Resp_date1, Response1, ...</code> - 반응 평가 (CR/PR/SD/PD, CNS 림프종은 CRu 포함) — 평가 시점부터 다음 평가까지 막대 색<br/>
+              • <code style={{ color: '#64ffda' }}>Resp_date1, Response1, ...</code> - 반응 평가 (CR/PR/SD/PD) — 평가 시점부터 다음 평가까지 막대 색<br/>
+              &nbsp;&nbsp;<span style={{ color: '#ccd6f6' }}>CNS 림프종(PCNSL)은 IPCG 기준이라 <code style={{ color: '#64ffda' }}>CRu</code>(CR unconfirmed)가 있습니다. Response 열에 <code style={{ color: '#64ffda' }}>CRu</code>라고 그대로 입력하면 앱이 자동으로 IPCG(CR/CRu/PR/SD/PD)로 그립니다. 다른 림프종은 CRu 없이 입력하면 됩니다.</span><br/>
               • <code style={{ color: '#64ffda' }}>ASCT_date</code> - ASCT 날짜 (선택)<br/>
               • <code style={{ color: '#64ffda' }}>Death_date</code> - 사망 날짜 (선택)<br/>
               • <code>Name</code> - 환자 이름 (표시용, 선택)<br/>
@@ -733,7 +734,7 @@ const App = () => {
                           </g>
                         )}
                         {patient.doseReds.map((m, i) => (
-                          <polygon key={`dr${i}`} points={`${X(m) - 4},${cy - 4} ${X(m) + 4},${cy - 4} ${X(m)},${cy + 4.5}`} fill={colors.DoseRed}/>
+                          <polygon key={`dr${i}`} points={`${X(m) - 4.5},${cy - 3.9} ${X(m) + 4.5},${cy - 3.9} ${X(m)},${cy + 3.9}`} fill={colors.DoseRed}/>
                         ))}
                         {patient.pdMonth != null && (
                           <circle cx={X(patient.pdMonth)} cy={cy} r={6} fill={colors.PD} stroke="#fff" strokeWidth="1.5"/>
