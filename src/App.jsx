@@ -12,16 +12,19 @@ const App = () => {
     showGrid: true,
     barHeight: 20,
     barGap: 22,
+    criteria: 'auto',   // auto | lugano | ipcg
   });
 
   const colors = {
     CR: '#123C7A',   // Complete Response - 진한 남색
+    CRu: '#1F52A0',  // CR unconfirmed (IPCG, CNS lymphoma) - CR과 PR 사이
     PR: '#2E6FBE',   // Partial Response - 파랑
     SD: '#63B3E0',   // Stable Disease - 밝은 파랑
     PD: '#D62728',   // Progressive Disease - 빨강 (경보)
     ASCT: '#9B59B6',
     Death: '#7A0C0C', // 진한 적갈색 (PD 빨강과 구분)
     bar: '#B8C0CC',
+    DoseRed: '#F59E0B', // dose reduction ▼ (호박색 — 파랑 램프·보라·빨강과 겹치지 않음)
   };
 
   const parseFile = useCallback((file) => {
@@ -65,7 +68,19 @@ const App = () => {
       const responses = [];
       for (let i = 1; i <= 10; i++) {
         const d = row[`Resp_date${i}`], r = row[`Response${i}`];
-        if (d && r) { const m = mo(d); if (m !== null) responses.push({ month: m, response: String(r).trim() }); }
+        if (d && r) {
+          const m = mo(d);
+          let resp = String(r).trim();
+          if (/^cru$/i.test(resp)) resp = 'CRu';            // CRu / CRU / cru → CRu (IPCG)
+          else resp = resp.toUpperCase();
+          if (m !== null) responses.push({ month: m, response: resp });
+        }
+      }
+
+      const doseReds = [];
+      for (let i = 1; i <= 10; i++) {
+        const d = row[`DoseRed_date${i}`];
+        if (d) { const m = mo(d); if (m !== null) doseReds.push(m); }
       }
 
       const aes = [];
@@ -136,6 +151,7 @@ const App = () => {
         solidEnd,
         dashEnd,
         segments,
+        doseReds,
       };
     }).filter(Boolean);
   };
@@ -215,11 +231,15 @@ const App = () => {
     });
     return m;
   }, [data, maxDuration]);
-  const RESP_ORDER = colors.sCR ? ['sCR', 'CR', 'VGPR', 'PR'] : ['CR', 'PR'];
-  const RANK = colors.sCR
-    ? { sCR: 7, CR: 6, VGPR: 5, PR: 4, MR: 3, SD: 2, PD: 1 }
+  // 반응 기준: Lugano(CR/PR/SD/PD) 또는 IPCG(CNS lymphoma, CR/CRu/PR/SD/PD).
+  // 'auto' = 데이터에 CRu가 하나라도 있으면 IPCG. 다른 림프종 데이터는 Lugano 그대로.
+  const hasCRu = !!(data && data.some(p => p.responses.some(r => r.response === 'CRu')));
+  const criteria = settings.criteria === 'auto' ? (hasCRu ? 'ipcg' : 'lugano') : settings.criteria;
+  const RESP_ORDER = criteria === 'ipcg' ? ['CR', 'CRu', 'PR'] : ['CR', 'PR'];
+  const RANK = criteria === 'ipcg'
+    ? { CR: 5, CRu: 4, PR: 3, SD: 2, PD: 1 }
     : { CR: 4, PR: 3, SD: 2, PD: 1 };
-  const showBrackets = !!colors.sCR;
+  const showBrackets = false;
 
   /* 범례 — 그림(SVG) 안 우측 세로 열. 화면과 SVG·PNG 내보내기가 항상 같다. */
   const LEGX = 1075;
@@ -237,8 +257,9 @@ const App = () => {
     y += 8;
     add(<polygon points={`${LEGX},${y - 6} ${LEGX + 6},${y} ${LEGX},${y + 6} ${LEGX - 6},${y}`} fill={colors.ASCT} />, 'ASCT');
     add(<g><line x1={LEGX - 5} y1={y - 5} x2={LEGX + 5} y2={y + 5} stroke={colors.Death} strokeWidth={2.5} /><line x1={LEGX + 5} y1={y - 5} x2={LEGX - 5} y2={y + 5} stroke={colors.Death} strokeWidth={2.5} /></g>, 'Death');
-    add(<polygon points={`${LEGX - 5},${y - 5} ${LEGX + 6},${y} ${LEGX - 5},${y + 5}`} fill="#374151" />, 'Ongoing');
-    add(<g><rect x={LEGX - 10} y={y - 5} width={20} height={10} fill={colors.CR} /><rect x={LEGX - 2} y={y - 6} width={4} height={12} fill="#fff" /><line x1={LEGX} y1={y - 8} x2={LEGX} y2={y + 8} stroke="#374151" strokeWidth={3} /></g>, 'EOT');
+    add(<polygon points={`${LEGX - 5},${y - 5} ${LEGX + 6},${y} ${LEGX - 5},${y + 5}`} fill="#374151" />, 'Alive at cutoff');
+    add(<polygon points={`${LEGX - 4},${y - 4} ${LEGX + 4},${y - 4} ${LEGX},${y + 4.5}`} fill={colors.DoseRed} />, 'Dose reduction');
+    add(<g><rect x={LEGX - 10} y={y - 5} width={20} height={10} fill={colors.CR} /><rect x={LEGX - 2} y={y - 6} width={4} height={12} fill="#fff" /><line x1={LEGX} y1={y - 9} x2={LEGX} y2={y + 9} stroke="#374151" strokeWidth={3} /></g>, 'EOT');
     add(<line x1={LEGX - 9} y1={y} x2={LEGX + 9} y2={y} stroke="#9AA0AA" strokeWidth={2} strokeDasharray="2 3" />, 'Survival FU');
     add(<g><line x1={LEGX - 5} y1={y + 6} x2={LEGX + 1} y2={y - 6} stroke="#374151" strokeWidth={2.5} /><line x1={LEGX} y1={y + 6} x2={LEGX + 6} y2={y - 6} stroke="#374151" strokeWidth={2.5} /></g>, 'Drop-out');
     add(<circle cx={LEGX} cy={y} r={4.5} fill="#111" />, 'AE');
@@ -527,7 +548,7 @@ const App = () => {
               • <code style={{ color: '#64ffda' }}>Cohort</code> - 코호트/Arm 구분 (선택)<br/>
               • <code style={{ color: '#64ffda' }}>Patient_ID</code> - 환자 ID<br/>
               • <code style={{ color: '#64ffda' }}>C1D1</code> - 치료 시작일<br/>
-              • <code style={{ color: '#64ffda' }}>Resp_date1, Response1, ...</code> - 반응 평가 (CR/PR/SD/PD) — 평가 시점부터 다음 평가까지 막대 색<br/>
+              • <code style={{ color: '#64ffda' }}>Resp_date1, Response1, ...</code> - 반응 평가 (CR/PR/SD/PD, CNS 림프종은 CRu 포함) — 평가 시점부터 다음 평가까지 막대 색<br/>
               • <code style={{ color: '#64ffda' }}>ASCT_date</code> - ASCT 날짜 (선택)<br/>
               • <code style={{ color: '#64ffda' }}>Death_date</code> - 사망 날짜 (선택)<br/>
               • <code>Name</code> - 환자 이름 (표시용, 선택)<br/>
@@ -535,6 +556,7 @@ const App = () => {
               • <code>LastDose_date</code> - 마지막 투여일=진행중(▶) 끝점 (선택)<br/>
               • <code>EOT_date</code> - 치료종료(EOT)일 = | 위치 (선택)<br/>
               • <code>Dropout_date</code> - 중도탈락일 = ⁄⁄ 위치 (선택)<br/>
+              • <code>DoseRed_date1, ...</code> - 용량 감량일 = 막대 안 ▼ (선택)<br/>
               • <code>LastFU_date</code> - 마지막 추적일 = 막대 끝 (PD·drop-out이 아니면 마지막 반응이 여기까지 유지된 것으로 그림)<br/>
               • <code>AE_name1, AE_date1, AE_grade1, ...</code> - 부작용 (선택)
             </p>
@@ -579,6 +601,18 @@ const App = () => {
                 </select>
               </div>
               
+              <div className="setting-item">
+                <span className="setting-label">Response criteria:</span>
+                <select
+                  value={settings.criteria}
+                  onChange={(e) => setSettings(s => ({ ...s, criteria: e.target.value }))}
+                >
+                  <option value="auto">Auto (CRu in data → IPCG)</option>
+                  <option value="lugano">Lugano (CR/PR/SD/PD)</option>
+                  <option value="ipcg">IPCG — CNS (CR/CRu/PR/SD/PD)</option>
+                </select>
+              </div>
+
               <div className="setting-item">
                 <span className="setting-label">Group by Cohort:</span>
                 <input 
@@ -688,15 +722,19 @@ const App = () => {
                           );
                         })}
 
-                        {st === 'ongoing' && (
+                        {/* ▶ = data cutoff 시점에 생존·추적 중 (치료 중이든 종료 후든). 사망·PD·drop-out은 없음 */}
+                        {patient.deathMonth == null && patient.pdMonth == null && st !== 'dropout' && (
                           <polygon points={`${X(patient.solidEnd) + 8},${cy - 6} ${X(patient.solidEnd) + 19},${cy} ${X(patient.solidEnd) + 8},${cy + 6}`} fill={mk}/>
                         )}
                         {st === 'eot' && (
                           <g>
                             <rect x={treatX - 2} y={y - 1} width={4} height={settings.barHeight + 2} fill="#fff"/>
-                            <line x1={treatX} y1={cy - 11} x2={treatX} y2={cy + 11} stroke={mk} strokeWidth="3"/>
+                            <line x1={treatX} y1={y - 5} x2={treatX} y2={y + settings.barHeight + 5} stroke={mk} strokeWidth="3"/>
                           </g>
                         )}
+                        {patient.doseReds.map((m, i) => (
+                          <polygon key={`dr${i}`} points={`${X(m) - 4},${cy - 4} ${X(m) + 4},${cy - 4} ${X(m)},${cy + 4.5}`} fill={colors.DoseRed}/>
+                        ))}
                         {patient.pdMonth != null && (
                           <circle cx={X(patient.pdMonth)} cy={cy} r={6} fill={colors.PD} stroke="#fff" strokeWidth="1.5"/>
                         )}
@@ -756,7 +794,7 @@ const App = () => {
                         <g key={`sum-${sg.k}`}>
                           <rect x={SUMX - SBARW / 2} y={sg.y0} width={SBARW} height={Math.max(sg.y1 - sg.y0, 0)} fill={colors[sg.k]} stroke="#fff" strokeWidth="1"/>
                           {sg.v >= 6 && (
-                            <text x={SUMX} y={(sg.y0 + sg.y1) / 2 + 4} textAnchor="middle" fontSize={`${sg.k} ${Math.round(sg.v)}%`.length > 8 ? 9 : 10.5} fill={(sg.k === 'CR' || sg.k === 'PR') ? '#fff' : '#1a1a1a'}>{sg.k} {Math.round(sg.v)}%</text>
+                            <text x={SUMX} y={(sg.y0 + sg.y1) / 2 + 4} textAnchor="middle" fontSize={`${sg.k} ${Math.round(sg.v)}%`.length > 8 ? 9 : 10.5} fill={(sg.k === 'CR' || sg.k === 'CRu' || sg.k === 'PR') ? '#fff' : '#1a1a1a'}>{sg.k} {Math.round(sg.v)}%</text>
                           )}
                         </g>
                       ))}
