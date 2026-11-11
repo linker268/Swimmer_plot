@@ -795,8 +795,16 @@ const App = () => {
                       )}
                       {cohortBars}
 
-                      <line x1={SUMX - SBARW / 2} y1={sY(100)} x2={SUMX + SBARW / 2} y2={sY(100)} stroke="#e5e5e5" strokeDasharray="3 3"/>
-                      <line x1={SUMX - SBARW / 2} y1={sY(0)} x2={SUMX + SBARW / 2} y2={sY(0)} stroke="#999"/>
+                      {/* Y축 0–100% + 기준선: 막대 높이가 곧 반응률임을 축으로 보여준다 */}
+                      <line x1={SUMX - SBARW / 2 - 10} y1={sY(0)} x2={SUMX - SBARW / 2 - 10} y2={sY(100)} stroke="#333" strokeWidth="1"/>
+                      <line x1={SUMX - SBARW / 2 - 10} y1={sY(0)} x2={SUMX + SBARW / 2 + 4} y2={sY(0)} stroke="#333" strokeWidth="1"/>
+                      {[0, 25, 50, 75, 100].map(t => (
+                        <g key={`yt${t}`}>
+                          <line x1={SUMX - SBARW / 2 - 14} y1={sY(t)} x2={SUMX - SBARW / 2 - 10} y2={sY(t)} stroke="#333" strokeWidth="1"/>
+                          <text x={SUMX - SBARW / 2 - 17} y={sY(t) + 3.5} textAnchor="end" fontSize="9.5" fill="#333">{t}</text>
+                        </g>
+                      ))}
+                      <text x={SUMX - SBARW / 2 - 42} y={sY(50)} textAnchor="middle" fontSize="10" fill="#333" transform={`rotate(-90, ${SUMX - SBARW / 2 - 42}, ${sY(50)})`}>Patients (%)</text>
                       {segs.filter(sg => sg.v > 0).map(sg => (
                         <g key={`sum-${sg.k}`}>
                           <rect x={SUMX - SBARW / 2} y={sg.y0} width={SBARW} height={Math.max(sg.y1 - sg.y0, 0)} fill={colors[sg.k]} stroke="#fff" strokeWidth="1"/>
